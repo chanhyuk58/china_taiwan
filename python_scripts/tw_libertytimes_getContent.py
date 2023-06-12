@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup as bs
 import time
 import random
 
-path = '/Users/chanhyuk/Documents/projects/china_taiwan/data/taiwan_libertytimes'
+path = '../data/taiwan_libertytimes'
 file_list=os.listdir(path)
 
 file_list_csv=[file for file in file_list if file.endswith(".csv")] 
@@ -32,7 +32,7 @@ for file in file_list_csv:
 
         content.append(body)
 
-        time.sleep(random.randrange(0,10))
+        time.sleep(random.randrange(0,5))
 
         print(f'>>>> Link {i} is done!')
 

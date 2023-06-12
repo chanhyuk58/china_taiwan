@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup as bs
 import time
 import random
 
-path = '/Users/chanhyuk/Documents/projects/china_taiwan/data/taiwan_chinatimes'
+# path = '/Users/chanhyuk/Documents/projects/china_taiwan/data/taiwan_chinatimes'
+path = '../data/taiwan_chinatimes/'
 file_list=os.listdir(path)
 
 file_list_csv=[file for file in file_list if file.endswith(".csv")] 
