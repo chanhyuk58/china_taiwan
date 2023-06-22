@@ -1,22 +1,35 @@
 import pandas as pd
 import os
 import re
-import openpyxl
-import xlrd
+# import openpyxl
+# import xlrd
+import glob
+import csv
+# import datetime
 
-path='/Users/chanhyuk/Downloads/taiwan/libertytimes'
-file_list=os.listdir(path)
+path = '../data'
+target = 'tw_chinatimes'
+file_list = glob.glob(f'{path}/{target}/*.csv')
+# file_name_list=[re.sub('\.csv', '', file) for file in file_list] 
 
-file_list_csv=[file for file in file_list if file.endswith(".xls")] 
-file_list_csv=[re.sub('\.xls', '', file) for file in file_list_csv] 
+df_all = pd.DataFrame(columns=['title', 'date', 'summary', 'link', 'content'])
+for file in file_list:
+    temp = pd.read_csv(file)
+    temp = temp.loc[temp.rel == 1,['title', 'date', 'summary', 'link']]
 
-for file in file_list_csv:
-    test = pd.read_excel(f'{path}/{file}.xls')
-    test = test.iloc[:, 0:8]
-    test.columns = ['relsub', 'relsum', 'rel', 'index', 'title', 'date',
-                    'summary', 'link']
-    
-    test.to_csv(
-        f'/Users/chanhyuk/Documents/projects/china_taiwan/data/taiwan_libertytimes/{file}.csv', encoding='utf-8-sig', index=False
-    )
+    df_all = pd.concat([df_all.reset_index(drop=True), temp.reset_index(drop=True)], axis=0)
+    df_all = df_all.drop_duplicates()
+    df_all.date = pd.to_datetime(df_all.date, format='mixed')
+    df_all = df_all.sort_values('date')
+    # df_all = df_all.loc[
+    # ('2021-12-31' < df_all.date) & (df_all.date < '2023-01-01'), :
+    # ]
 
+# df_all.to_csv(f'{path}/{target}/{target}_all.csv', index=False)
+
+# df_all = pd.read_csv(f'{path}/{target}/{target}_all.csv')
+df_all.date = pd.to_datetime(df_all.date)
+
+for month in range(1,13):
+    df_month = df_all.loc[df_all.date.dt.month == month,:]
+    df_month.to_csv(f'{path}/{target}/{target}_{month:02d}.csv', encoding='utf-8-sig', index=False)

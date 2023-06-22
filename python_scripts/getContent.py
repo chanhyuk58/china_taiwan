@@ -6,162 +6,147 @@ import requests
 from bs4 import BeautifulSoup as bs
 import time
 import random
+import glob
 
 ############################## Chinatimes ##############################
+def chinatimes(limit):
+    path = '../data/tw_chinatimes/'
+    file_list = glob.glob(f'{path}*_[0-9][0-9].csv')
 
-# path = '/Users/chanhyuk/Documents/projects/china_taiwan/data/taiwan_chinatimes'
-path = '../data/taiwan_chinatimes/'
-file_list=os.listdir(path)
-
-file_list_csv=[file for file in file_list if file.endswith(".csv")] 
-file_list_csv=[re.sub('\.csv', '', file) for file in file_list_csv] 
-
-for file in file_list_csv:
-    # file = file_list_csv[3]
-    temp = pd.read_csv(f'{path}/{file}.csv', index_col=None)
-    temp = temp.loc[temp.rel == 1,:]
-    links = list(temp.link)
-
-    content = list()
-    i = 0
-    for link in links:
-        # link = links[0]
-        i += 1
-        res = requests.get(link)
-        text = bs(res.text, 'html.parser')
-        body = text.select('div.article-body p')
-        body = ''.join(map(str,body))
-        body = re.sub('<p>', '', body)
-        body = re.sub('</p>', '', body)
-
-        content.append(body)
-
-        time.sleep(random.randrange(0,5))
-
-        print(f'>>>> Link {i} is done!')
-
-    content1 = pd.DataFrame(content,columns=['content']) 
-    file2 = pd.concat([temp.reset_index(drop=True), content1.reset_index(drop=True)], axis=1)
-
-    file2.to_csv(f'{path}/{file}(2).csv', index=False, encoding='utf-8-sig')
-    print(f'<<<< File {file} is done!')
-
-print('>>> Chinatimes is done!!! <<<')
+    cnt = 0
+    for file in file_list:
+        temp = pd.read_csv(file, index_col=None)
+        
+        for i in range(0,len(temp)):
+            if cnt >= limit:
+                break
+                break
+            else:
+                if pd.isnull(temp.at[i, 'content']):
+                    cnt += 1
+                    link = temp.at[i, 'link']
+                    res = requests.get(link)
+                    text = bs(res.text, 'html.parser')
+                    body = text.select('div.article-body p')
+                    body = ''.join(map(str,body))
+                    body = re.sub('<p>', '', body)
+                    body = re.sub('</p>', '', body)
+            
+                    temp.at[i, 'content'] = body
+            
+                    print(f'>>>> Link {cnt} is done!')
+                    time.sleep(random.randrange(0,2))
+        
+        temp.to_csv(file, index=False, encoding='utf-8-sig')
+        print(f'<<<< File {file} is on!')
+    return print('>>> Chinatimes is done!!! <<<')
 
 ############################## Libertytimes ###########################
 
-path = '../data/taiwan_libertytimes'
-file_list=os.listdir(path)
+def libertytimes(limit):
+    path = '../data/tw_libertytimes/'
+    file_list = glob.glob(f'{path}*_[0-9][0-9].csv')
 
-file_list_csv=[file for file in file_list if file.endswith(".csv")] 
-file_list_csv=[re.sub('\.csv', '', file) for file in file_list_csv] 
-
-for file in file_list_csv:
-    # file = file_list_csv[0]
-    temp = pd.read_csv(f'{path}/{file}.csv', index_col=None)
-    temp = temp.loc[temp.rel == 1,:]
-    links = list(temp.link)
-
-    content = list()
-    i = 0
-    for link in links:
-        # link = links[0]
-        i += 1
-        res = requests.get(link)
-        text = bs(res.text, 'html.parser')
-        body = text.select('div.content div.text p')
-        body = ''.join([sentence.text for sentence in body])
-        body = re.sub('\n|\r', '', body)
-
-        content.append(body)
-
-        time.sleep(random.randrange(0,5))
-
-        print(f'>>>> Link {i} is done!')
-
-    content1 = pd.DataFrame(content,columns=['content']) 
-    file2 = pd.concat([temp, content1], axis=1)
-
-    file2.to_csv(f'{path}/{file}(2).csv', index=False, encoding='utf-8-sig')
-    print(f'<<<< File {file} is done!')
-
-
-print('>>> Libertytimes is done!!! <<<')
+    cnt = 0
+    for file in file_list:
+        temp = pd.read_csv(file, index_col=None)
+        
+        for i in range(0,len(temp)):
+            if cnt >= limit:
+                break
+                break
+            else:
+                if pd.isnull(temp.at[i, 'content']):
+                    cnt += 1
+                    link = temp.at[i, 'link']
+                    res = requests.get(link)
+                    text = bs(res.text, 'html.parser')
+                    body = text.select(
+                        'div.content div.text p:not(.appE1121,p:has(a[title*=點我訂閱自由財經Youtube頻道]))'
+                    )
+                    body2 = text.select('div.content div.text p')
+                    body = ''.join([sentence.text for sentence in body])
+                    temp.at[i, 'content'] = body
+            
+                    print(f'>>>> Link {cnt} is done!')
+                    time.sleep(random.randrange(0,2))
+        
+        print(f'<<<< File {file} is on!')
+        temp.to_csv(file, index=False, encoding='utf-8-sig')
+    return print('>>> Libertytimes is done!!! <<<')
 
 ############################## Nextapple ##############################
 
-path = '../data/taiwan_nextapple'
-file_list=os.listdir(path)
+def nextapple(limit):
+    path = '../data/tw_nextapple/'
+    file_list = glob.glob(f'{path}*_[0-9][0-9].csv')
 
-file_list_csv=[file for file in file_list if file.endswith(".csv")] 
-file_list_csv=[re.sub('\.csv', '', file) for file in file_list_csv] 
-
-for file in file_list_csv:
-    # file = file_list_csv[0]
-    temp = pd.read_csv(f'{path}/{file}.csv', index_col=None)
-    temp = temp.loc[temp.rel == 1,:]
-    links = list(temp.link)
-
-    content = list()
-    i = 0
-    for link in links:
-        # link = links[0]
-        i += 1
-        res = requests.get(link)
-        text = bs(res.text, 'html.parser')
-        body = text.select('div.post-content p')
-        body = ''.join([sentence.text for sentence in body])
-        body = re.sub('\n|\r', '', body)
-
-        content.append(body)
-
-        time.sleep(random.randrange(0,5))
-
-        print(f'>>>> Link {i} is done!')
-
-    content1 = pd.DataFrame(content,columns=['content']) 
-    file2 = pd.concat([temp, content1], axis=1)
-
-    file2.to_csv(f'{path}/{file}(2).csv', index=False, encoding='utf-8-sig')
-    print(f'<<<< File {file} is done!')
-
-print('>>> nextapple is done!!! <<<')
+    cnt = 0
+    for file in file_list:
+        temp = pd.read_csv(file, index_col=None)
+        
+        for i in range(0,len(temp)):
+            if cnt >= limit:
+                break
+                break
+            else:
+                if pd.isnull(temp.at[i, 'content']):
+                    cnt += 1
+                    link = temp.at[i, 'link']
+                    res = requests.get(link)
+                    text = bs(res.text, 'html.parser')
+                    body = text.select('div.post-content p')
+                    body = ''.join([sentence.text for sentence in body])
+                    body = re.sub('\n|\r', '', body)
+                    temp.at[i, 'content'] = body
+            
+                    print(f'>>>> Link {cnt} is done!')
+                    time.sleep(random.randrange(0,2))
+        
+        print(f'<<<< File {file} is on!')
+        temp.to_csv(file, index=False, encoding='utf-8-sig')
+    return print('>>> Nextapple is done!!! <<<')
 
 ############################## udn #################################
 
-path = '../data/taiwan_udn/'
-file_list=os.listdir(path)
+def udn(limit):
+    path = '../data/tw_udn/'
+    file_list = glob.glob(f'{path}*_[0-9][0-9].csv')
 
-file_list_csv=[file for file in file_list if file.endswith(".csv")] 
-file_list_csv=[re.sub('\.csv', '', file) for file in file_list_csv] 
+    cnt = 0
+    for file in file_list:
+        temp = pd.read_csv(file, index_col=None)
+        
+        for i in range(0,len(temp)):
+            if cnt >= limit:
+                break
+                break
+            else:
+                if pd.isnull(temp.at[i, 'content']):
+                    cnt += 1
+                    link = temp.at[i, 'link']
 
-for file in file_list_csv:
-    # file = file_list_csv[7]
-    temp = pd.read_csv(f'{path}/{file}.csv', index_col=None)
-    temp = temp.loc[temp.rel == 1,:]
-    links = list(temp.link)
+                    res = requests.get(link)
+                    text = bs(res.text, 'html.parser')
+                    body = text.select(
+                        'section.article-content__paragraph p, div#container p'
+                    )
+                    body = ''.join([sentence.text for sentence in body])
+                    body = re.sub('\n|\r', '', body)
 
-    content = list()
-    i = 0
-    for link in links:
-        # link = links[0]
-        i += 1
-        res = requests.get(link)
-        text = bs(res.text, 'html.parser')
-        body = text.select('section.article-content__editor p')
-        body = ''.join([sentence.text for sentence in body])
-        body = re.sub('\n|\r', '', body)
+                    temp.at[i, 'content'] = body
+            
+                    print(f'>>>> Link {cnt} is done!')
+                    time.sleep(random.randrange(0,2))
+        print(f'<<<< File {file} is on!')
+        temp.to_csv(file, index=False, encoding='utf-8-sig')
+        
+    return print('>>> udn is done!!! <<<')
 
-        content.append(body)
+################################ Loop ################################
 
-        time.sleep(random.randrange(0,5))
-
-        print(f'>>>> Link {i} is done!')
-
-    content1 = pd.DataFrame(content,columns=['content']) 
-    file2 = pd.concat([temp, content1], axis=1)
-
-    file2.to_csv(f'{path}/{file}(2).csv', index=False, encoding='utf-8-sig')
-    print(f'<<<< File {file} is done!')
-
-print('>>> udn is done!!! <<<')
+for i in range(0,5):
+    # chinatimes(100)
+    libertytimes(100)
+    # nextapple(100)
+    udn(100)
