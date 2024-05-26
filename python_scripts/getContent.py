@@ -62,7 +62,7 @@ def libertytimes(limit):
                     res = requests.get(link)
                     text = bs(res.text, 'html.parser')
                     body = text.select(
-                        'div.content div.text p:not(.appE1121,p:has(a[title*=點我訂閱自由財經Youtube頻道]))'
+                        'div.content div.text p:not(.appE1121,p:has(a[title*=點我訂閱自由財經Youtube頻道])), article.article div.text p'
                     )
                     body2 = text.select('div.content div.text p')
                     body = ''.join([sentence.text for sentence in body])
@@ -129,7 +129,14 @@ def udn(limit):
                     res = requests.get(link)
                     text = bs(res.text, 'html.parser')
                     body = text.select(
-                        'section.article-content__paragraph p, div#container p'
+                       ( 
+                        "div.container section.article-content__editor  p, "
+                        "div#container p, article.story-article p, "
+                        "div.story_body_content p, "
+                        "div.story__text__wrapper p, article.story_article p, "
+                        "body > main > div > section > section > article > div > section.article-content__editor p, "
+                        "div#container > main p"
+                        )
                     )
                     body = ''.join([sentence.text for sentence in body])
                     body = re.sub('\n|\r', '', body)
@@ -138,6 +145,8 @@ def udn(limit):
             
                     print(f'>>>> Link {cnt} is done!')
                     time.sleep(random.randrange(0,2))
+                else:
+                    pass
         print(f'<<<< File {file} is on!')
         temp.to_csv(file, index=False, encoding='utf-8-sig')
         
@@ -145,8 +154,9 @@ def udn(limit):
 
 ################################ Loop ################################
 
-for i in range(0,5):
+for i in range(0,100):
     # chinatimes(100)
-    libertytimes(100)
+    # libertytimes(100)
     # nextapple(100)
-    udn(100)
+    udn(2000)
+    time.sleep(30)
