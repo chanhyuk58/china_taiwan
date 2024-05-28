@@ -58,7 +58,7 @@ def getCoocMat(target_words, translated, document):
     return cooc
 
 # function: get nodes
-def getNodes(target_words, target_words_cnt, cooc):
+def getNodes(target_words, cooc):
     nodes = []
     for i in range(len(target_words)):
         for j in range(i+1, len(target_words)):
@@ -67,15 +67,12 @@ def getNodes(target_words, target_words_cnt, cooc):
                 nodes.append([
                     target_words[i], 
                     target_words[j], 
-                    target_words_cnt[i], 
-                    target_words_cnt[j], 
                     connection
                 ])
     return nodes
 
 # function: get nodes for certain words
-# function: get words nodes
-def getCertainNodes(target, target_words, target_words_cnt, cooc):
+def getCertainNodes(target, target_words, cooc):
     nodes = []
     i = target_words.index(target)
     connection_list = cooc[target]
@@ -85,8 +82,6 @@ def getCertainNodes(target, target_words, target_words_cnt, cooc):
         nodes.append([
             target, 
             target_words[j], 
-            target_words_cnt[i], 
-            target_words_cnt[j], 
             connection
         ])
     return nodes
@@ -113,75 +108,89 @@ tw_nextapple_ch = [item[0] for item in tw_nextapple_nouns]
 tw_nextapple_ko = [item[2] + f"({item[0]})" for item in tw_nextapple_nouns]
 tw_nextapple_en = [item[3] + f"({item[0]})" for item in tw_nextapple_nouns]
 
+top50s = csv2List("../data/taiwan/nouns/top50s.csv")[1:]
+top50s_ko = [item[1] + f"({item[0]})" for item in top50s]
+
 # generate coocurence matrix
+cooc_pro_china = getCoocMat(pro_china_ch, pro_china_ko, flatten(pro_china_bow))
 cooc_nextapple = getCoocMat(tw_nextapple_ch, tw_nextapple_ko, flatten(tw_nextapple_bow))
 cooc_libertytimes = getCoocMat(tw_nextapple_ch, tw_libertytimes_ko, flatten(tw_libertytimes_bow))
-cooc_pro_china = getCoocMat(pro_china_ch, pro_china_ko, flatten(pro_china_bow))
 
 # get nodes list
-# nodes_nextapple = getNodes(tw_nextapple_ko, tw_nextapple_count, cooc_nextapple)
-nodes_nextapple = getCertainNodes("항중보대(抗中保台)", tw_nextapple_ko, tw_nextapple_count, cooc_nextapple)
-nodes_libertytimes = getCertainNodes("항중보대(抗中保台)", tw_libertytimes_ko, tw_libertytimes_count, cooc_libertytimes)
-nodes_pro_china = getCertainNodes("항중보대(抗中保台)", pro_china_ko, pro_china_count, cooc_pro_china)
+## whole
+nodes_pro_china = getNodes(pro_china_ko, cooc_pro_china)
+nodes_nextapple = getNodes(tw_nextapple_ko, cooc_nextapple)
+nodes_libertytimes = getNodes(tw_libertytimes_ko, cooc_libertytimes)
+
+## top 50 words
+nodes_pro_china = getNodes(top50s_ko, cooc_pro_china)
+nodes_nextapple = getNodes(top50s_ko, cooc_nextapple)
+nodes_libertytimes = getNodes(top50s_ko, cooc_libertytimes)
+
+## certain words
+nodes_pro_china = getCertainNodes("항중보대(抗中保台)", pro_china_ko, cooc_pro_china)
+nodes_nextapple = getCertainNodes("항중보대(抗中保台)", tw_nextapple_ko, cooc_nextapple)
+nodes_libertytimes = getCertainNodes("항중보대(抗中保台)", tw_libertytimes_ko, cooc_libertytimes)
 
 ###############################################################
 ######################## Draw graph ###########################
 ###############################################################
 
+# function: calculate centrality
+def centrality(node_data):
+    G = nx.Graph()
+    for pair in node_data:
+        node_x, node_y, connection = pair[0], pair[1], pair[2]
+        G.add_edge(node_x, node_y, weight=connection)
+    page_rank = nx.pagerank(G)
+    out = [[k, v] for k,v in page_rank.items()]
+    return out
+
 # function: draw network graph
 def netGraph(node_data, cut_level):
     G = nx.Graph()
-
-    cut = np.percentile([pair[4] for pair in node_data], cut_level)
-    min_connect = np.min([pair[4] for pair in node_data])
-    max_connect = np.max([pair[4] for pair in node_data])
+    cut = np.percentile([pair[2] for pair in node_data], cut_level)
+    node_data = [pair for pair in node_data if pair[2] > cut]
+    min_connect = np.min([pair[2] for pair in node_data])
+    max_connect = np.max([pair[2] for pair in node_data])
     
     for pair in node_data:
-        node_x, node_y, node_x_cnt, node_y_cnt, connection = pair[0], pair[1], pair[2], pair[3], pair[4]
-        if not G.has_node(node_x):
-            G.add_node(node_x, count=node_x_cnt)
-        if not G.has_node(node_y):
-            G.add_node(node_y, count=node_y_cnt)
+        node_x, node_y, connection = pair[0], pair[1], pair[2]
         if not G.has_edge(node_x, node_y):
-            if connection > cut:
-                G.add_edge(
-                    node_x, node_y, 
-                    weight=connection/100, 
-                    color = "red", 
-                    alpha = (connection - min_connect) / (max_connect - min_connect)
-                )
-            else:
-                G.add_edge(
-                    node_x, node_y, 
-                    weight=connection/100, 
-                    color = "lightgrey", 
-                    alpha = (connection - min_connect) / (max_connect - min_connect)
-                )
+            G.add_edge(
+                node_x, node_y, 
+                weight=(connection/10000),
+                alpha = 0.05 + 0.95*((connection - min_connect) / (max_connect - min_connect))
+            )
+        if not G.has_node(node_x):
+            G.add_node(node_x)
+        if not G.has_node(node_y):
+            G.add_node(node_y)
     
             
     # G.nodes(data=True) # check data
     # G.edges(data=True) # check data
-    pos = nx.spring_layout(G, k=1.2) # assign positions of nodes
+    pos = nx.spring_layout(G, scale=0.4) # assign positions of nodes
     
     # node_size = [int(d['count'])/10 for (n,d) in G.nodes(data=True)]
-    # pagerank_score_dict = nx.pagerank(G)
+    pagerank_score_dict = nx.pagerank(G)
     # pagerank_score = [item for item in pagerank_score_dict.values()]
     # pagerank_median = stat.median(pagerank_score)
     # pagerank_score = [((item * 1000)**5) * 100 for item in pagerank_score_dict.values()]
-    # pagerank_score = [item*100000 for item in pagerank_score_dict.values()]
+    pagerank_score = [item*100000 for item in pagerank_score_dict.values()]
     # edge_width = [float(d['weight'])*20 for (u,v,d) in G.edges(data=True)]
 
-    edge_width = [float(d['weight'])/2 for (u,v,d) in G.edges(data=True)]
-    edge_color = [d['color'] for (u,v,d) in G.edges(data=True)]
+    # edge_width = [float(d['weight'])/2 for (u,v,d) in G.edges(data=True)]
+    # edge_color = [d['color'] for (u,v,d) in G.edges(data=True)]
     edge_alpha = [d['alpha'] for (u,v,d) in G.edges(data=True)]
 
     # font_prop = fmgr.FontProperties(fname="/System/Library/Fonts/PingFang.ttc")
     
     plt.clf()
-    plt.figure(figsize=(15,15))
+    plt.figure(figsize=(20,20))
 
     ### draw nodes
-    # nx.draw_networkx_nodes(G, pos, node_size=pagerank_score, node_color="grey", alpha=0.5)
+    nx.draw_networkx_nodes(G, pos, node_size=pagerank_score, node_color="grey", alpha=0.5)
     # draw labels
     # for node, (x, y) in pos.items():
     #     if pagerank_score_dict[node] >= pagerank_median:
@@ -207,13 +216,20 @@ def netGraph(node_data, cut_level):
     
     plt.axis('off')
     # plt.show()
+    return
 
 # generate network graphs
-netGraph(nodes_nextapple, 100)
-plt.savefig('../figures/nextapple_항중보대.png')
+netGraph(nodes_pro_china, 90)
+plt.savefig('../figures/pro_china_top50.png')
+test = centrality(nodes_libertytimes)
+with open("../data/taiwan/nouns/pagerank_libertytimes.csv", "w") as f:
+    writer = csv.writer(f)
+    writer.writerow(['words', 'rank'])
+    writer.writerows(test)
 
-netGraph(nodes_libertytimes, 100)
-plt.savefig('../figures/libertytimes_항중보대.png')
+netGraph(nodes_nextapple, 90)
+plt.savefig('../figures/nextapple_top50.png')
 
-netGraph(nodes_pro_china, 100)
-plt.savefig('../figures/pro_china_항중보대.png')
+netGraph(nodes_libertytimes, 90)
+plt.savefig('../figures/libertytimes_top50.png')
+
