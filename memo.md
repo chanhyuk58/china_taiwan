@@ -1,0 +1,17 @@
+## blank "contents" columns ##
+- chinatimes 
+    - Missing: 12(1), 8(2) 
+    - Dates: 2022-01-01 ~ 2022-12-31
+    - Scraped: 2023-06-21 ~ 2023-06-23
+- libertytimes 
+    - Missing: 1(6), 2(5), 4(1) 
+    - Dates: 2022-01-01 ~ 2022-12-31
+    - Scraped: 2023-06-23 ~ 2023-06-25
+- nextapple 
+    - Missing: 12(5), 9(1) 
+    - Dates: 2022-09-01 ~ 2022-12-31
+    - Scraped: 2023-06-25 ~ 2023-06-25
+- udn 
+    - Missing: 8(90), 9(60), 10(82), 4(8) 
+    - Dates: 2022-01-01 ~ 2022-12-31
+    - Scraped: 2023-06-25 ~ 2023-06-27
